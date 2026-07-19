@@ -148,13 +148,19 @@ function StageActor({
 
   const posterUrl = safeExternalUrl(pet.posterUrl);
 
+  // Actor box bottom == feet baseline (slot.y). Shadow + nameplate sit absolutely
+  // below the feet so they never push the sprite upward into the row behind.
+  // Matches export geometry in layoutSlots / composeGroupPhoto.
+  const zIndex = 10 + index;
+
   return (
     <div
-      className="photo-actor absolute z-10 flex flex-col items-center"
+      className="photo-actor absolute"
       style={{
         left: `${leftPct}%`,
         bottom: `${bottomPct}%`,
         width: `${widthPct}%`,
+        zIndex,
         transform: "translateX(-50%)",
         animationDelay: `${index * 70}ms`,
         ["--bob-delay" as string]: motion.bobDelay,
@@ -181,14 +187,21 @@ function StageActor({
             </div>
           ) : null}
         </div>
-        <div className="photo-actor-shadow mx-auto mt-1 h-2 w-[70%] rounded-[100%] bg-slate-900/20 blur-[3px]" />
       </div>
+      <div
+        className="photo-actor-shadow pointer-events-none absolute left-1/2 top-full w-[70%] -translate-x-1/2 rounded-[100%] bg-slate-900/20 blur-[3px]"
+        style={{ marginTop: "2px", height: "6px" }}
+        aria-hidden="true"
+      />
       {nameLabel ? (
-        <span className={`photo-name-tag mt-1 max-w-[110%] truncate rounded-full px-2 py-0.5 text-[10px] font-semibold sm:text-[11px] ${
-          dark
-            ? "bg-slate-950/55 text-white"
-            : "bg-white/90 text-ink shadow-sm"
-        }`}>
+        <span
+          className={`photo-name-tag absolute left-1/2 top-full z-10 max-w-[100%] -translate-x-1/2 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none sm:text-[11px] ${
+            dark
+              ? "bg-slate-950/55 text-white"
+              : "bg-white/90 text-ink shadow-sm"
+          }`}
+          style={{ marginTop: "0.45rem" }}
+        >
           {nameLabel}
         </span>
       ) : null}

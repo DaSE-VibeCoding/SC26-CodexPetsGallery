@@ -173,8 +173,14 @@ export type PhotoSlot = {
   rsize: number;
 };
 
+/**
+ * Place pets on the 16:9 photo-booth stage.
+ *
+ * Slot.y is the *feet* baseline. Nameplates hang below the feet, and the live
+ * stage also bobs actors by ~7px, so multi-row layouts must reserve a generous
+ * band under each row or back-row labels crush the front row.
+ */
 export function layoutSlots(count: number, width: number, height: number): PhotoSlot[] {
-  const groundY = height * 0.78;
   if (count <= 0) return [];
 
   const toSlot = (x: number, y: number, size: number): PhotoSlot => ({
@@ -186,31 +192,70 @@ export function layoutSlots(count: number, width: number, height: number): Photo
     rsize: size / width,
   });
 
-  if (count <= 5) {
-    const size = Math.min(210, width / (count + 0.8));
-    const total = count * size;
-    const startX = (width - total) / 2 + size / 2;
-    return Array.from({ length: count }, (_, index) =>
-      toSlot(startX + index * size, groundY, size),
+  // Slogan / watermark chrome — keep cast clear of both.
+  const topSafe = height * 0.15;
+  const bottomSafe = height * 0.07;
+  // Nameplate + shadow + bob travel under the feet.
+  const nameplateRatio = 0.3;
+  // Clear air between back-row plate bottom and front-row head.
+  const rowGapMin = height * 0.04;
+  const sidePad = width * 0.04;
+  const usableW = width - sidePad * 2;
+
+  const rowSlots = (n: number, size: number, feetY: number) => {
+    // Horizontal breathing room so long nameplates don't collide with neighbors.
+    const gap = size * 0.08;
+    const totalW = n * size + Math.max(0, n - 1) * gap;
+    const startX = (width - totalW) / 2 + size / 2;
+    const step = size + gap;
+    return Array.from({ length: n }, (_, index) =>
+      toSlot(startX + index * step, feetY, size),
     );
+  };
+
+  if (count <= 5) {
+    const byWidth = usableW / Math.max(1, count + 0.05);
+    const byHeight = (height - topSafe - bottomSafe) / (1 + nameplateRatio);
+    const size = Math.min(210, byWidth, byHeight);
+    // Natural ground line, clamped so head + plate stay in-bounds.
+    const preferredFeet = height * 0.8;
+    const minFeet = topSafe + size;
+    const maxFeet = height - bottomSafe - size * nameplateRatio;
+    const feetY = Math.min(maxFeet, Math.max(minFeet, preferredFeet));
+    return rowSlots(count, size, feetY);
   }
 
+  // Two rows for 6–12. Size from available band, then center the stack
+  // slightly below mid-frame so it feels grounded without hugging the edge.
   const topCount = Math.ceil(count / 2);
   const bottomCount = count - topCount;
-  const topSize = Math.min(170, width / (topCount + 0.9));
-  const bottomSize = Math.min(190, width / (bottomCount + 0.8));
-  const topY = groundY - topSize * 0.72;
-  const bottomY = groundY + 8;
-  const topStart = (width - topCount * topSize) / 2 + topSize / 2;
-  const bottomStart = (width - bottomCount * bottomSize) / 2 + bottomSize / 2;
+  const frontScale = 1.08;
+
+  const byWidthTop = usableW / Math.max(1, topCount + 0.08);
+  const byWidthBottom = usableW / Math.max(1, bottomCount + 0.08);
+  const bandH = height - topSafe - bottomSafe;
+  // Vertical unit in back-row size: back*(1+np) + gap + front*(1+np)
+  const verticalUnit = (1 + nameplateRatio) * (1 + frontScale);
+  const byHeightBack = (bandH - rowGapMin) / Math.max(0.1, verticalUnit);
+
+  const topSize = Math.min(140, byWidthTop, byHeightBack);
+  const bottomSize = Math.min(155, byWidthBottom, topSize * frontScale);
+
+  const backBlock = topSize * (1 + nameplateRatio);
+  const frontBlock = bottomSize * (1 + nameplateRatio);
+  const gap = Math.max(rowGapMin, Math.min(topSize, bottomSize) * 0.24);
+  const totalBlock = backBlock + gap + frontBlock;
+
+  // Bias slightly toward the ground (55% of free space above, 45% below).
+  const free = Math.max(0, bandH - totalBlock);
+  const stackTop = topSafe + free * 0.55;
+
+  const topY = stackTop + topSize;
+  const bottomY = stackTop + backBlock + gap + bottomSize;
 
   return [
-    ...Array.from({ length: topCount }, (_, index) =>
-      toSlot(topStart + index * topSize, topY, topSize),
-    ),
-    ...Array.from({ length: bottomCount }, (_, index) =>
-      toSlot(bottomStart + index * bottomSize, bottomY, bottomSize),
-    ),
+    ...rowSlots(topCount, topSize, topY),
+    ...rowSlots(bottomCount, bottomSize, bottomY),
   ];
 }
 
@@ -1477,13 +1522,24 @@ export async function composeGroupPhoto({
 
     const label = resolvePhotoNameLabel(pets[index], resolvedMode);
     if (label) {
-      ctx.font = `600 ${Math.max(16, Math.floor(slot.size * 0.12))}px "Segoe UI", "PingFang SC", sans-serif`;
-      const textWidth = ctx.measureText(label).width;
-      const padX = 12;
+      const fontSize = Math.max(14, Math.min(22, Math.floor(slot.size * 0.12)));
+      ctx.font = `600 ${fontSize}px "Segoe UI", "PingFang SC", "Microsoft YaHei UI", sans-serif`;
+      // Cap plate width near the pet body so neighbors don't collide.
+      const maxW = slot.size * 0.98;
+      let drawLabel = label;
+      if (ctx.measureText(drawLabel).width > maxW) {
+        while (drawLabel.length > 1 && ctx.measureText(`${drawLabel}…`).width > maxW) {
+          drawLabel = drawLabel.slice(0, -1);
+        }
+        drawLabel = `${drawLabel}…`;
+      }
+      const textWidth = ctx.measureText(drawLabel).width;
+      const padX = Math.max(8, fontSize * 0.55);
       const boxW = textWidth + padX * 2;
-      const boxH = Math.max(28, slot.size * 0.16);
+      const boxH = Math.max(22, Math.round(fontSize + fontSize * 0.55));
       const boxX = slot.x - boxW / 2;
-      const boxY = slot.y + 8;
+      // Sit just under the feet baseline (layout reserves nameplate band under feet).
+      const boxY = slot.y + Math.max(4, Math.round(slot.size * 0.03));
       ctx.fillStyle = "rgba(255,255,255,0.92)";
       ctx.beginPath();
       ctx.roundRect(boxX, boxY, boxW, boxH, 999);
@@ -1491,7 +1547,7 @@ export async function composeGroupPhoto({
       ctx.fillStyle = "#141816";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillText(label, slot.x, boxY + boxH / 2 + 0.5);
+      ctx.fillText(drawLabel, slot.x, boxY + boxH / 2 + 0.5);
     }
   });
 
