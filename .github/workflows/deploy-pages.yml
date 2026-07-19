@@ -2,7 +2,7 @@ name: Build and deploy gallery
 
 on:
   issues:
-    types: [opened, edited, deleted, closed, reopened, labeled, unlabeled]
+    types: [edited, deleted, closed, reopened, labeled, unlabeled]
   workflow_dispatch:
   push:
     branches: [main]
