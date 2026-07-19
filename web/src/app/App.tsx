@@ -11,13 +11,14 @@ import { loadDensity, saveDensity } from "../lib/density";
 import { matchesGroup, matchesSearch } from "../lib/gallery-filter";
 import { reduceMotion } from "../lib/media";
 import { PHOTO_MAX } from "../lib/photo-booth";
+import { loadSortMode, saveSortMode, sortPets } from "../lib/sort";
 import {
   supportsHoverFinePointer,
   type TrialPoint,
   type TrialScaleStep,
 } from "../lib/trial-companion";
 import { readUrlState, writeUrlState } from "../lib/url-state";
-import type { DensityMode, GalleryConfig, Pet } from "../lib/types";
+import type { DensityMode, GalleryConfig, Pet, SortMode } from "../lib/types";
 
 const PAGE_SIZE = 40;
 
@@ -34,6 +35,8 @@ export function App() {
   const [group, setGroup] = useState(initialUrl.group);
   const [page, setPage] = useState(initialUrl.page);
   const [density, setDensity] = useState<DensityMode>(() => loadDensity());
+  const [sortMode, setSortMode] = useState<SortMode>(() => loadSortMode());
+  const [randomSeed, setRandomSeed] = useState(() => Date.now());
   const [activePetId, setActivePetId] = useState<string | null>(initialUrl.petId);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -98,10 +101,10 @@ export function App() {
     return () => media.removeEventListener?.("change", onChange);
   }, []);
 
-  const filteredPets = useMemo(
-    () => allPets.filter((pet) => matchesSearch(pet, query) && matchesGroup(pet, group)),
-    [allPets, query, group],
-  );
+  const filteredPets = useMemo(() => {
+    const matched = allPets.filter((pet) => matchesSearch(pet, query) && matchesGroup(pet, group));
+    return sortPets(matched, sortMode, randomSeed);
+  }, [allPets, query, group, sortMode, randomSeed]);
 
   const pageCount = Math.max(1, Math.ceil(filteredPets.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(1, page), pageCount);
@@ -177,6 +180,14 @@ export function App() {
     saveDensity(mode);
   }
 
+  function updateSortMode(mode: SortMode) {
+    // Re-clicking "随机" reshuffles; switching into random also gets a fresh seed.
+    if (mode === "random") setRandomSeed(Date.now());
+    setSortMode(mode);
+    saveSortMode(mode);
+    setPage(1);
+  }
+
   const startTrial = useCallback((pet: Pet) => {
     setTrialPetId(pet.id);
     setActivePetId(null);
@@ -220,6 +231,7 @@ export function App() {
           <GalleryTools
             query={query}
             group={group}
+            sortMode={sortMode}
             density={density}
             resultSummary={resultSummary}
             onQueryChange={(value) => {
@@ -230,6 +242,7 @@ export function App() {
               setGroup(value);
               setPage(1);
             }}
+            onSortModeChange={updateSortMode}
             onDensityChange={updateDensity}
           />
         </div>

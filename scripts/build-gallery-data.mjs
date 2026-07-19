@@ -173,6 +173,7 @@ export function parseSubmission(issue) {
     githubUrl: `https://github.com/${encodeURIComponent(issue.user.login)}`,
     ...extractPetAttachments(fields[FIELD_LABELS.files] ?? ""),
     issueUrl: issue.html_url,
+    createdAt: issue.created_at,
     updatedAt: issue.updated_at,
   };
 }
@@ -400,7 +401,17 @@ export function selectLatestSubmissions(issues) {
     latestByAccount.set(submission.githubLogin, submission);
   }
 
-  return [...latestByAccount.values()];
+  return sortSubmissionsByCreatedAtDesc([...latestByAccount.values()]);
+}
+
+/** Default gallery order: newest issue upload first. */
+export function sortSubmissionsByCreatedAtDesc(submissions) {
+  return [...submissions].sort((left, right) => {
+    const leftTime = Date.parse(left.createdAt ?? left.updatedAt ?? "") || 0;
+    const rightTime = Date.parse(right.createdAt ?? right.updatedAt ?? "") || 0;
+    if (rightTime !== leftTime) return rightTime - leftTime;
+    return (right.issueNumber ?? 0) - (left.issueNumber ?? 0);
+  });
 }
 
 export async function selectLatestValidSubmissions(
@@ -469,7 +480,7 @@ export async function selectLatestValidSubmissions(
     },
   );
   await Promise.all(workers);
-  return selected.filter(Boolean);
+  return sortSubmissionsByCreatedAtDesc(selected.filter(Boolean));
 }
 
 async function loadPreviewCache(rootDir) {

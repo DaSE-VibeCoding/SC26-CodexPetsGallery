@@ -47,10 +47,15 @@ export type Pet = {
   petConfigUrl?: string;
   spritesheetUrl?: string;
   configUrl?: string;
+  /** Issue creation time (upload time). Preferred for gallery sort. */
+  createdAt?: string;
   updatedAt?: string;
 };
 
 export type DensityMode = "cozy" | "comfortable" | "compact";
+
+/** Gallery list sort order. Default is newest issue upload first. */
+export type SortMode = "newest" | "oldest" | "random";
 
 export type UrlState = {
   petId: string | null;

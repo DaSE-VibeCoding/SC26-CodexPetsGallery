@@ -1,5 +1,6 @@
-import type { DensityMode, GalleryConfig } from "../lib/types";
+import type { DensityMode, GalleryConfig, SortMode } from "../lib/types";
 import { DENSITY_LABELS, DENSITY_MODES } from "../lib/density";
+import { SORT_HINTS, SORT_LABELS, SORT_MODES } from "../lib/sort";
 
 type HeaderProps = {
   config: GalleryConfig;
@@ -79,20 +80,24 @@ export function SiteHeader({
 type ToolsProps = {
   query: string;
   group: string;
+  sortMode: SortMode;
   density: DensityMode;
   resultSummary: string;
   onQueryChange: (value: string) => void;
   onGroupChange: (value: string) => void;
+  onSortModeChange: (value: SortMode) => void;
   onDensityChange: (value: DensityMode) => void;
 };
 
 export function GalleryTools({
   query,
   group,
+  sortMode,
   density,
   resultSummary,
   onQueryChange,
   onGroupChange,
+  onSortModeChange,
   onDensityChange,
 }: ToolsProps) {
   return (
@@ -100,7 +105,7 @@ export function GalleryTools({
       <div className="shell">
         <div className="ui-card border-line/90 bg-white/90 px-4 py-3.5 backdrop-blur-xl sm:px-5">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div className="grid flex-1 gap-3 sm:grid-cols-2">
+            <div className="grid flex-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <label className="flex flex-col gap-1.5 text-sm">
                 <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">搜索</span>
                 <input
@@ -129,6 +134,38 @@ export function GalleryTools({
                   ))}
                 </datalist>
               </label>
+              <div className="flex flex-col gap-1.5 text-sm sm:col-span-2 xl:col-span-1">
+                <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">排序</span>
+                <div
+                  className="inline-flex w-full rounded-2xl border border-line bg-canvas/70 p-1"
+                  role="group"
+                  aria-label="排序方式"
+                >
+                  {SORT_MODES.map((mode) => {
+                    const active = sortMode === mode;
+                    return (
+                      <button
+                        key={mode}
+                        type="button"
+                        title={SORT_HINTS[mode]}
+                        aria-label={SORT_HINTS[mode]}
+                        aria-pressed={active}
+                        className={`relative min-h-10 flex-1 rounded-xl px-2.5 text-sm font-semibold transition active:scale-[0.98] ${
+                          active
+                            ? "bg-white text-brand shadow-sm ring-1 ring-brand/15"
+                            : "text-muted hover:bg-white/60 hover:text-ink"
+                        }`}
+                        onClick={() => onSortModeChange(mode)}
+                      >
+                        <span className="inline-flex items-center justify-center gap-1.5">
+                          <SortGlyph mode={mode} active={active} />
+                          {SORT_LABELS[mode]}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-between gap-3 lg:justify-end">
@@ -157,6 +194,37 @@ export function GalleryTools({
         </div>
       </div>
     </section>
+  );
+}
+
+function SortGlyph({ mode, active }: { mode: SortMode; active: boolean }) {
+  const tone = active ? "text-brand" : "text-muted";
+  if (mode === "newest") {
+    return (
+      <svg className={`h-3.5 w-3.5 ${tone}`} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M4 11.5 8 4.5l4 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5.5 9.5h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  if (mode === "oldest") {
+    return (
+      <svg className={`h-3.5 w-3.5 ${tone}`} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M4 4.5 8 11.5l4-7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M5.5 6.5h5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg className={`h-3.5 w-3.5 ${tone}`} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M3.5 5.5h5.2M11.5 5.5l-1.6-1.6M11.5 5.5l-1.6 1.6M12.5 10.5H7.3M4.5 10.5l1.6-1.6M4.5 10.5l1.6 1.6"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

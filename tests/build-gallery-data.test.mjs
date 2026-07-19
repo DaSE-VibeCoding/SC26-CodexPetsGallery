@@ -17,6 +17,7 @@ import {
   readWebpDimensions,
   selectLatestSubmissions,
   selectLatestValidSubmissions,
+  sortSubmissionsByCreatedAtDesc,
 } from "../scripts/build-gallery-data.mjs";
 import {
   normalizeSpriteGrid,
@@ -55,6 +56,7 @@ function issue(overrides = {}) {
     body: validBody(),
     user: { login: "student" },
     html_url: "https://github.com/owner/repo/issues/7",
+    created_at: "2026-07-17T07:00:00Z",
     updated_at: "2026-07-17T08:00:00Z",
     ...overrides,
   };
@@ -137,6 +139,7 @@ test("有效投稿会转成公开画廊数据", () => {
     petConfigUrl: "https://github.com/user-attachments/files/one/pet.json",
     spritesheetUrl: "https://github.com/user-attachments/assets/one",
     issueUrl: "https://github.com/owner/repo/issues/7",
+    createdAt: "2026-07-17T07:00:00Z",
     updatedAt: "2026-07-17T08:00:00Z",
   });
 });
@@ -206,22 +209,46 @@ test("拒绝原因会明确指出标题缺少宠物名", () => {
 });
 
 test("同一账号只保留最近更新的有效投稿", () => {
-  const older = issue({ number: 1, updated_at: "2026-07-16T08:00:00Z" });
+  const older = issue({
+    number: 1,
+    created_at: "2026-07-16T07:00:00Z",
+    updated_at: "2026-07-16T08:00:00Z",
+  });
   const newer = issue({
     number: 2,
     title: "[宠物投稿] 新宠物",
+    created_at: "2026-07-17T08:00:00Z",
     updated_at: "2026-07-17T09:00:00Z",
     body: validBody({ suffix: "two" }),
   });
   const other = issue({
     number: 3,
     user: { login: "another" },
+    created_at: "2026-07-15T10:00:00Z",
     updated_at: "2026-07-17T10:00:00Z",
   });
 
   const selected = selectLatestSubmissions([older, newer, other]);
   assert.equal(selected.length, 2);
   assert.equal(selected.find((pet) => pet.githubLogin === "student").petName, "新宠物");
+  // Default gallery order is by upload time (created_at), newest first — not last update.
+  assert.deepEqual(
+    selected.map((pet) => pet.petName),
+    ["新宠物", "小火苗"],
+  );
+});
+
+test("画廊默认顺序按 Issue 上传时间从新到旧", () => {
+  const pets = sortSubmissionsByCreatedAtDesc([
+    { petName: "旧宠", createdAt: "2026-07-10T00:00:00Z", issueNumber: 1 },
+    { petName: "新宠", createdAt: "2026-07-18T00:00:00Z", issueNumber: 3 },
+    // Edited recently, but uploaded earlier than 新宠 — must not float to the top.
+    { petName: "改过的旧宠", createdAt: "2026-07-12T00:00:00Z", updatedAt: "2026-07-19T00:00:00Z", issueNumber: 2 },
+  ]);
+  assert.deepEqual(
+    pets.map((pet) => pet.petName),
+    ["新宠", "改过的旧宠", "旧宠"],
+  );
 });
 
 test("标准 WebP 精灵图通过校验后会生成安全配置", async () => {
