@@ -2,6 +2,8 @@
 
 SummerCamp 2026 的学员宠物图鉴：把大家做的像素宠物收在一起看、搜、分享，还能多宠合影。
 
+**线上站点**：https://dase-vibecoding.github.io/SC26-CodexPetsGallery/
+
 页面始终带三个官方示例，示例不占投稿名额。
 
 ---
