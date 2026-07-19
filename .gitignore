@@ -1,0 +1,15 @@
+web/public/pets.json
+web/public/gallery.config.json
+web/public/previews.json
+web/public/generated/
+dist/
+.gallery-cache/
+node_modules/
+.playwright/
+*.log
+
+# Local camp-photo stress fixtures / harness (not for shipping)
+scripts/generate-camp-stress-pets.mjs
+scripts/stress-camp-layout.mjs
+scripts/stress-camp-photo.mjs
+scripts/stress-camp-*.mjs

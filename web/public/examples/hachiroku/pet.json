@@ -1,0 +1,23 @@
+{
+  "id": "hachiroku",
+  "displayName": "Hachiroku",
+  "description": "穿着黑色列车长制服的像素风伙伴，包含移动和多种表情动作。",
+  "spritesheetPath": "spritesheet.webp",
+  "spriteGrid": {
+    "formatVersion": "v1",
+    "columns": 8,
+    "rows": 9,
+    "defaultState": "idle",
+    "states": [
+      { "id": "idle", "label": "待机", "row": 0, "frames": 6, "frameDuration": 180, "description": "安静呼吸和眨眼。" },
+      { "id": "run-right", "label": "向右跑", "row": 1, "frames": 8, "frameDuration": 90, "description": "向右侧快速移动。" },
+      { "id": "run-left", "label": "向左跑", "row": 2, "frames": 8, "frameDuration": 90, "description": "向左侧快速移动。" },
+      { "id": "waving", "label": "招手", "row": 3, "frames": 4, "frameDuration": 170, "description": "停下来向你打招呼。" },
+      { "id": "jumping", "label": "跳跃", "row": 4, "frames": 5, "frameDuration": 130, "description": "开心地跳起来。" },
+      { "id": "failed", "label": "失败", "row": 5, "frames": 8, "frameDuration": 170, "description": "遇到挫折后的反应。" },
+      { "id": "waiting", "label": "等待", "row": 6, "frames": 6, "frameDuration": 190, "description": "在原地耐心等待。" },
+      { "id": "running", "label": "处理中", "row": 7, "frames": 6, "frameDuration": 100, "description": "任务正在执行、思考或处理。" },
+      { "id": "review", "label": "审阅", "row": 8, "frames": 6, "frameDuration": 170, "description": "认真检查当前任务。" }
+    ]
+  }
+}

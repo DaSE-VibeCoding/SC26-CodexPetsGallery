@@ -1,0 +1,54 @@
+name: 提交我的宠物
+description: 将你的宠物展示到 SummerCamp 2026 宠物画廊
+title: "[宠物投稿] "
+labels:
+  - pet-submission
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **必填：在上方标题栏把宠物名写在 `[宠物投稿]` 后面**，例如：`[宠物投稿] 香蕉猫`。
+        只写 `[宠物投稿]` 而没有名字会被判定为无效投稿。
+        投稿只需要原始 `pet.json` 和 `spritesheet.webp`，不需要另外制作展示图或 ZIP。
+
+  - type: input
+    id: nickname
+    attributes:
+      label: 学员昵称
+      description: 画廊中公开显示的名字
+      placeholder: 例如：小明
+    validations:
+      required: true
+
+  - type: input
+    id: group
+    attributes:
+      label: 所属分组
+      description: 选填，建议填写。只填写 1-33 的数字，不要填写“第”和“组”，方便你和组员在画廊中互相找到。
+      placeholder: 例如：5
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 一句话介绍
+      description: 用一句简短的话介绍你的宠物。画廊中会公开显示。
+      placeholder: 例如：一只会陪我写代码的香蕉猫。
+    validations:
+      required: true
+
+  - type: upload
+    id: pet-files
+    attributes:
+      label: 宠物文件
+      description: 将 `pet.json` 和 `spritesheet.webp` 一起拖到这里，等待两个文件都上传完成后再提交。请保留这两个文件名。
+    validations:
+      required: true
+      accept: ".json,.webp"
+
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: 公开展示确认
+      options:
+        - label: 我确认该宠物可以在公开画廊中展示，并同意公开以上信息和两个宠物文件。
+          required: true
